@@ -20,6 +20,10 @@ detector = vision.FaceLandmarker.create_from_options(options)
 cam = cv2.VideoCapture(0)
 screen_w, screen_h = pyautogui.size()
 
+## Disable PyAutoGUI fail-safe if you want the mouse to reach the very corners
+# pyautogui.FAILSAFE = False 
+# print("VocalIris OS: Camera Starting... Press 'q' to quit.")
+
 while cam.isOpened():
     success, frame = cam.read()
     if not success: break               ## If add continue, it doesn't detect, kinda crashes.
