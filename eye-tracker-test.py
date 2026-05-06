@@ -5,7 +5,6 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 # 1. Setup the Task Base
-# NOTE: You need the 'face_landmarker.task' file in your folder!
 model_path = 'face_landmarker.task' 
 
 base_options = python.BaseOptions(model_asset_path=model_path)
@@ -16,49 +15,45 @@ options = vision.FaceLandmarkerOptions(
     num_faces=1)
 detector = vision.FaceLandmarker.create_from_options(options)
 
-# 2. Setup Camera
-cam = cv2.VideoCapture(0)
+# 2. Setup Camera (Index 1 was your working port)
+cam = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 screen_w, screen_h = pyautogui.size()
 
-## Disable PyAutoGUI fail-safe if you want the mouse to reach the very corners
-# pyautogui.FAILSAFE = False 
-# print("VocalIris OS: Camera Starting... Press 'q' to quit.")
+if not cam.isOpened():
+    print("Error: Could not open camera at Index 1.")
+else:
+    print("VocalIris OS: Active. Look at the screen to move the mouse. Press 'q' to quit.")
 
 while cam.isOpened():
     success, frame = cam.read()
-    if not success: break               ## If add continue, it doesn't detect, kinda crashes.
+    if not success:
+        continue # Use continue so it keeps trying if a frame is dropped
 
+    # Flip for mirror effect and convert color
     frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
-    # MediaPipe modern API requires an 'Image' object
+    # MediaPipe detection
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-    
-    # 3. Detect Landmarks
     detection_result = detector.detect(mp_image)
 
-    # 4. Extract Iris/Eye data
+    # 3. Process Landmarks & Move Mouse
     if detection_result and detection_result.face_landmarks:
-        # Landmarks are now in a nested list
         landmarks = detection_result.face_landmarks[0]
         
-        # Landmark index 474 is still the center of the right iris
+        # Landmark 474: Right Iris Center
         iris_point = landmarks[474]
         
-        # 5. Coordinate Mapping
+        # Map to Screen
         mouse_x = int(iris_point.x * screen_w)
         mouse_y = int(iris_point.y * screen_h)
         
-        # 6. Move Cursor (Smoothly move to prevent jitter)
+        # Move Cursor instantly
         pyautogui.moveTo(mouse_x, mouse_y, _pause=False)
 
-
-    ##### Directly shows error message. Doesn't take time. #####
-    # else:
-    # # If no face is seen, just print a warning instead of crashing
-    # print("No face detected... looking...")
-
-    cv2.imshow('VocalIris OS - Modern Engine', frame)
+    # 4. Show the Window
+    cv2.imshow('VocalIris OS - Eye Tracker', frame)
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
