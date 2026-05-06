@@ -22,7 +22,7 @@ screen_w, screen_h = pyautogui.size()
 
 while cam.isOpened():
     success, frame = cam.read()
-    if not success: break
+    if not success: break               ## If add continue, it doesn't detect, kinda crashes.
 
     frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -34,7 +34,7 @@ while cam.isOpened():
     detection_result = detector.detect(mp_image)
 
     # 4. Extract Iris/Eye data
-    if detection_result.face_landmarks:
+    if detection_result and detection_result.face_landmarks:
         # Landmarks are now in a nested list
         landmarks = detection_result.face_landmarks[0]
         
@@ -47,6 +47,12 @@ while cam.isOpened():
         
         # 6. Move Cursor (Smoothly move to prevent jitter)
         pyautogui.moveTo(mouse_x, mouse_y, _pause=False)
+
+
+    ##### Directly shows error message. Doesn't take time. #####
+    # else:
+    # # If no face is seen, just print a warning instead of crashing
+    # print("No face detected... looking...")
 
     cv2.imshow('VocalIris OS - Modern Engine', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
