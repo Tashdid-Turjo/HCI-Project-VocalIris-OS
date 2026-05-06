@@ -1,43 +1,54 @@
 import cv2
 import mediapipe as mp
 import pyautogui
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
-# 1. Setup MediaPipe Face Mesh (for Iris tracking)
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True) 
+# 1. Setup the Task Base
+# NOTE: You need the 'face_landmarker.task' file in your folder!
+model_path = 'face_landmarker.task' 
+
+base_options = python.BaseOptions(model_asset_path=model_path)
+options = vision.FaceLandmarkerOptions(
+    base_options=base_options,
+    output_face_blendshapes=True,
+    output_facial_transformation_matrixes=True,
+    num_faces=1)
+detector = vision.FaceLandmarker.create_from_options(options)
 
 # 2. Setup Camera
 cam = cv2.VideoCapture(0)
 screen_w, screen_h = pyautogui.size()
 
-print("System started. Look at the camera to move the mouse. Press 'q' to quit.")
+while cam.isOpened():
+    success, frame = cam.read()
+    if not success: break
 
-while True:
-    _, frame = cam.read()
-    frame = cv2.flip(frame, 1) # Flip like a mirror
+    frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
-    # 3. Process the frame for landmarks
-    output = face_mesh.process(rgb_frame)
-    landmark_points = output.multi_face_landmarks
+    # MediaPipe modern API requires an 'Image' object
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
     
-    if landmark_points:
-        landmarks = landmark_points[0].landmark
-        
-        # 4. Use specific landmark for the Eye (474 is a standard iris point)
-        eye = landmarks[474] 
-        
-        # 5. Map Landmark (0.0 to 1.0) to Screen Pixels
-        # This acts as your 'Mouse Pointer'
-        mouse_x = int(eye.x * screen_w)
-        mouse_y = int(eye.y * screen_h)
-        
-        # 6. Move the actual Windows cursor
-        pyautogui.moveTo(mouse_x, mouse_y)
+    # 3. Detect Landmarks
+    detection_result = detector.detect(mp_image)
 
-    # Show the webcam feed (The UI/UX part)
-    cv2.imshow('VocalIris Eye Tracker Test', frame)
-    
+    # 4. Extract Iris/Eye data
+    if detection_result.face_landmarks:
+        # Landmarks are now in a nested list
+        landmarks = detection_result.face_landmarks[0]
+        
+        # Landmark index 474 is still the center of the right iris
+        iris_point = landmarks[474]
+        
+        # 5. Coordinate Mapping
+        mouse_x = int(iris_point.x * screen_w)
+        mouse_y = int(iris_point.y * screen_h)
+        
+        # 6. Move Cursor (Smoothly move to prevent jitter)
+        pyautogui.moveTo(mouse_x, mouse_y, _pause=False)
+
+    cv2.imshow('VocalIris OS - Modern Engine', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
