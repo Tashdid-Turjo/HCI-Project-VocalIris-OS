@@ -85,4 +85,4 @@ while cam.isOpened():
         break
 
 cam.release()
-cv2.destroyAllWindows()
+cv2.destroyAllWindows() 
