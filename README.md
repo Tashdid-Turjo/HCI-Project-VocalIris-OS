@@ -7,7 +7,9 @@
 
 ## For Voice Recognition:
 1. Vosk,
-2. Sounddevice
+2. Sounddevice,
+3. Numpy,
+4. 
 
 ## Tool, Virtual Environment Setup:
 
