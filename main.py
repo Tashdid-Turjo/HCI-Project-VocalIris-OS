@@ -4,7 +4,8 @@
 import customtkinter as ctk
 from ui.settings_page import SettingsPage
 from ui.home_page import HomePage
-
+from ui.profile_page import ProfilePage
+from ui.help_page import HelpPage
 
     
 class VocalIrisApp(ctk.CTk):
@@ -76,11 +77,11 @@ class VocalIrisApp(ctk.CTk):
 
     # 6. The Page Switching Router Function
     def switch_page(self, page_name):
-        # Clear the old screen items
+        # Clear the old screen layout elements completely
         for widget in self.content_frame.winfo_children():
             widget.destroy()
             
-        # Router evaluations
+        # Complete Multi-Frame Router Architecture
         if page_name == "Home":
             self.active_page = HomePage(self.content_frame)
             self.active_page.pack(fill="both", expand=True)
@@ -89,14 +90,13 @@ class VocalIrisApp(ctk.CTk):
             self.active_page = SettingsPage(self.content_frame)
             self.active_page.pack(fill="both", expand=True)
             
-        else:
-            # Fallback text placeholder for Profile and Help pages
-            self.page_title_label = ctk.CTkLabel(
-                self.content_frame, 
-                text=f"{page_name} View Layout Placeholder", 
-                font=ctk.CTkFont(size=24, weight="bold")
-            )
-            self.page_title_label.pack(pady=20)
+        elif page_name == "Profile":
+            self.active_page = ProfilePage(self.content_frame)
+            self.active_page.pack(fill="both", expand=True)
+            
+        elif page_name == "Help":
+            self.active_page = HelpPage(self.content_frame)
+            self.active_page.pack(fill="both", expand=True)
             
         print(f"Switched panel router state to: {page_name}")
 
