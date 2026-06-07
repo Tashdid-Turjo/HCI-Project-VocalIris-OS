@@ -1,9 +1,11 @@
 # For OfflineDesktop Application Creation
 # The controller script that runs the sidebar and launches the app
 
+import os
+import json
 import customtkinter as ctk
-from ui.settings_page import SettingsPage
 from ui.home_page import HomePage
+from ui.settings_page import SettingsPage
 from ui.profile_page import ProfilePage
 from ui.help_page import HelpPage
 
@@ -12,25 +14,42 @@ class VocalIrisApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # 1. Main Window Dimensions & Title
+        # ==========================================
+        # 1. LOCAL STORAGE FILE PATH & BLUEPRINT
+        # ==========================================
+        self.config_filename = "config.json"
+        self.default_settings = {
+            "theme": "dark",
+            "language": "English",
+            "font_size": 14,
+            "show_popups": True,
+            "behavioral_profile": "browsing"
+        }
+        
+        # Load existing configuration or generate the fallback defaults
+        self.settings = self.load_configuration()
+
+        # ==========================================
+        # 2. MAIN WINDOW CONFIGURATION
+        # ==========================================
         self.title("VocalIris OS - Desktop Client")
         self.geometry("1000x600")
         
-        # Ensure the app starts in Dark Mode by default
-        ctk.set_appearance_mode("dark")
+        # Apply the user's saved theme preference globally immediately on boot
+        ctk.set_appearance_mode(self.settings["theme"])
         ctk.set_default_color_theme("blue")
 
-        # 2. Layout Grid Configuration (1 Row, 2 Columns)
-        # Column 0 = Sidebar (Fixed width), Column 1 = Content (Expands to fill screen)
+        # Layout Grid (1 Row, 2 Columns)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # 3. Create the Left Sidebar Panel
+        # ==========================================
+        # 3. SIDEBAR NAVIGATION PANEL
+        # ==========================================
         self.sidebar_frame = ctk.CTkFrame(self, width=200, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(5, weight=1) # Pushes anything below down
+        self.sidebar_frame.grid_rowconfigure(5, weight=1) 
 
-        # Sidebar Title
         self.logo_label = ctk.CTkLabel(
             self.sidebar_frame, 
             text="VocalIris OS", 
@@ -38,7 +57,7 @@ class VocalIrisApp(ctk.CTk):
         )
         self.logo_label.grid(row=0, column=0, padx=20, pady=20)
 
-        # 4. Add the 4 Major Sidebar Buttons
+        # Sidebar Buttons Linked to Router Engine
         self.btn_home = ctk.CTkButton(
             self.sidebar_frame, text="Home", 
             command=lambda: self.switch_page("Home")
@@ -63,31 +82,64 @@ class VocalIrisApp(ctk.CTk):
         )
         self.btn_help.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
-        # 5. Create the Right Content Panel (The Stage)
+        # ==========================================
+        # 4. DYNAMIC RIGHT CONTENT PANELS
+        # ==========================================
         self.content_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         
-        # Display a temporary landing label inside the content panel
-        self.page_title_label = ctk.CTkLabel(
-            self.content_frame, 
-            text="Welcome to VocalIris OS", 
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.page_title_label.pack(pady=50)
+        # Load the Home page directly as our default landing view
+        self.switch_page("Home")
 
-    # 6. The Page Switching Router Function
+    # ==========================================
+    # JSON STORAGE CONTROLLER LOGIC
+    # ==========================================
+    def load_configuration(self):
+        """Reads preferences from the local JSON path or creates it if missing."""
+        if os.path.exists(self.config_filename):
+            try:
+                with open(self.config_filename, "r") as file:
+                    data = json.load(file)
+                    print("Local preferences file parsed successfully.")
+                    return data
+            except Exception as e:
+                print(f"Error parsing JSON configuration file ({e}). Resetting to default.")
+                return self.default_settings.copy()
+        else:
+            # File missing: write the default blueprint data structure to the drive
+            try:
+                with open(self.config_filename, "w") as file:
+                    json.dump(self.default_settings, file, indent=4)
+                print("Fresh config.json file initialized in the parent workspace directory.")
+            except Exception as e:
+                print(f"Critical workspace error writing JSON file: {e}")
+            return self.default_settings.copy()
+
+    def update_setting(self, key, value):
+        """Saves a modified parameter to local storage in real-time."""
+        self.settings[key] = value
+        try:
+            with open(self.config_filename, "w") as file:
+                json.dump(self.settings, file, indent=4)
+            print(f"Saved configuration to disk -> [{key}]: {value}")
+        except Exception as e:
+            print(f"Failed to commit parameter modification to JSON registry: {e}")
+
+    # ==========================================
+    # MULTI-FRAME ROUTER CONTROLLER ENGINE
+    # ==========================================
     def switch_page(self, page_name):
-        # Clear the old screen layout elements completely
+        """Wipes the dynamic content card and slots the target layout class on stage."""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
             
-        # Complete Multi-Frame Router Architecture
         if page_name == "Home":
             self.active_page = HomePage(self.content_frame)
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Settings":
-            self.active_page = SettingsPage(self.content_frame)
+            # Pass 'self' (the app instance) explicitly right here!
+            self.active_page = SettingsPage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Profile":
