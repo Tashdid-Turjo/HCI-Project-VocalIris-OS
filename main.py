@@ -5,6 +5,7 @@ import customtkinter as ctk
 from ui.settings_page import SettingsPage
 from ui.home_page import HomePage
 
+    
 class VocalIrisApp(ctk.CTk):
     def __init__(self):
         super().__init__()
