@@ -102,12 +102,15 @@ class HomePage(ctk.CTkFrame):
         if self.app_master.eye_running:
             self.eye_switch.select()
 
-        # Target Dropdown
+        # Target Dropdown Setup
         self.mode_label = ctk.CTkLabel(self.eye_card, text="Active Extraction Processing Target:")
         self.mode_label.pack(anchor="w", padx=20, pady=(20, 5))
         
+        # --- TASK 1: ADDING THE DROPDOWN LISTENER (command=self.on_dropdown_change) ---
         self.mode_dropdown = ctk.CTkOptionMenu(
-            self.eye_card, values=["Eyeball Tracking (High Precision)", "Face Tracking (Backup Profile)"]
+            self.eye_card, 
+            values=["Eyeball Tracking (High Precision)", "Face Tracking (Backup Profile)"],
+            command=self.on_dropdown_change  
         )
         self.mode_dropdown.pack(anchor="w", padx=20, pady=0)
         
@@ -145,7 +148,6 @@ class HomePage(ctk.CTkFrame):
             self.app_master.voice_running = False
 
     def toggle_eye_service(self):
-        # 1. Grab what target the user selected in the dropdown menu
         selected_mode = self.mode_dropdown.get()
         self.app_master.active_processing_target = selected_mode
 
@@ -153,7 +155,6 @@ class HomePage(ctk.CTkFrame):
             self.app_master.eye_running = True
             print(f"UI Trigger -> Initializing Background Line for target: {selected_mode}")
             
-            # 2. Spin up the processing thread pointing to our real camera engine pipeline
             self.eye_thread = threading.Thread(target=self._camera_hardware_pipeline, daemon=True)
             self.eye_thread.start()
         else:
@@ -161,6 +162,29 @@ class HomePage(ctk.CTkFrame):
             self.app_master.eye_running = False
             self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
             self.video_label.pack(expand=True, pady=40)
+
+    # --- TASK 2: PUT THE BRAND NEW DROPDOWN AUTOMATION FUNCTION HERE ---
+    def on_dropdown_change(self, selected_mode):
+        """Triggers immediately when the user changes the dropdown selection."""
+        print(f"UI Event -> User switched dropdown to: {selected_mode}")
+        
+        # Always update the active target state
+        self.app_master.active_processing_target = selected_mode
+        
+        # Hot-reload: If tracking is running, reboot the engine cleanly in the background
+        if self.eye_switch.get() == 1 and self.app_master.eye_running:
+            print(">>> [Hot-Reload] Changing processing profiles on the fly. Rebooting camera thread...")
+            
+            # Stop the current engine loop safely
+            self.app_master.eye_running = False
+            
+            # Give the previous hardware pipeline loop a split second to release the camera handle
+            time.sleep(0.3)
+            
+            # Fire up the brand new target script thread immediately!
+            self.app_master.eye_running = True
+            self.eye_thread = threading.Thread(target=self._camera_hardware_pipeline, daemon=True)
+            self.eye_thread.start()
 
     # ========================================================
     # BACKGROUND LIVE CAMERA PROCESSING PIPELINE
@@ -170,15 +194,12 @@ class HomePage(ctk.CTkFrame):
         current_choice = self.app_master.active_processing_target
         print(f">>> [Eye Thread] Booting engine stream route: {current_choice}")
 
-        # Route 1: Run your high-precision eyeball tracking script
         if "Eyeball" in current_choice and run_eyeball_tracking is not None:
             run_eyeball_tracking(app_callback=self._process_and_draw_frame)
             
-        # Route 2: Run your backup face tracking script  
         elif "Face" in current_choice and run_face_detection is not None:
             run_face_detection(app_callback=self._process_and_draw_frame)
             
-        # Fallback Simulation: Runs if your scripts are missing or empty
         else:
             cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
             while self.app_master.eye_running:
@@ -198,20 +219,13 @@ class HomePage(ctk.CTkFrame):
             return False
 
         try:
-            # OpenCV processes frames in BGR format; flip it to standard RGB
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Resize image smoothly to fit inside our dashboard placeholder card
             pil_img = Image.fromarray(rgb_frame)
             resized_img = pil_img.resize((420, 200), Image.Resampling.LANCZOS)
-            
-            # Cast image object into a standard Tkinter PhotoImage element
             tk_img = ImageTk.PhotoImage(image=resized_img)
             
-            # Safely push the image update to the UI label element
             self.video_label.configure(image=tk_img, text="")
-            self.video_label.image = tk_img  # Keep reference to prevent garbage collection
-            
+            self.video_label.image = tk_img  
             self.video_label.pack(fill="both", expand=True, padx=0, pady=0)
             return True
         except Exception as e:
