@@ -1,6 +1,16 @@
 import threading
 import time
+import cv2
 import customtkinter as ctk
+
+# Safe dynamic tracking script imports
+try:
+    from engines.Iris_Voice import run_eyeball_tracking, run_voice_recognition
+    from engines.face_detection_test import run_face_detection
+except ImportError:
+    run_eyeball_tracking = None
+    run_voice_recognition = None
+    run_face_detection = None
 
 class HomePage(ctk.CTkFrame):
     def __init__(self, parent, app_instance):
@@ -46,7 +56,7 @@ class HomePage(ctk.CTkFrame):
         )
         self.voice_switch.pack(anchor="w", padx=20, pady=5)
         
-        # PERSIST STATE: Check if voice was running globally and toggle visual look accordingly
+        # PERSIST STATE: Keep switch visually selected if it was active
         if self.app_master.voice_running:
             self.voice_switch.select()
 
@@ -88,11 +98,11 @@ class HomePage(ctk.CTkFrame):
         )
         self.eye_switch.pack(anchor="w", padx=20, pady=5)
         
-        # PERSIST STATE: Check if eye tracking was running globally and toggle visual look accordingly
+        # PERSIST STATE: Keep switch visually selected if it was active
         if self.app_master.eye_running:
             self.eye_switch.select()
 
-        # Dropdown
+        # Target Dropdown
         self.mode_label = ctk.CTkLabel(self.eye_card, text="Active Extraction Processing Target:")
         self.mode_label.pack(anchor="w", padx=20, pady=(20, 5))
         
@@ -101,53 +111,115 @@ class HomePage(ctk.CTkFrame):
         )
         self.mode_dropdown.pack(anchor="w", padx=20, pady=0)
         
-        # Visual Placeholder
+        # Visual Frame Container for Camera Render Canvas
         self.video_placeholder = ctk.CTkFrame(self.eye_card, fg_color="#1a1a1a", height=200)
         self.video_placeholder.pack(fill="x", padx=15, pady=(35, 15), side="bottom")
         
         self.video_label = ctk.CTkLabel(
             self.video_placeholder, 
-            text="[ Local Hardware Webcam Feed Overlay Canvas ]\n(Will bind via background OpenCV frames later)", 
+            text="[ Hardware Webcam Feed Offline ]", 
             text_color="#555555", font=ctk.CTkFont(size=11, slant="italic")
         )
         self.video_label.pack(expand=True, pady=40)
 
     # ========================================================
-    # THREAD CONTROLLER CONTROLS
+    # INTERFACE THREAD MANAGEMENT LOGIC
     # ========================================================
     def toggle_voice_service(self):
         if self.voice_switch.get() == 1:
             self.app_master.voice_running = True
-            print("UI Trigger -> Starting Voice Service Worker Thread...")
-            self.voice_thread = threading.Thread(target=self._bg_voice_loop, daemon=True)
+            print("UI Trigger -> Booting Vosk Microphone Speech Recognition...")
+            
+            if run_voice_recognition is not None:
+                self.voice_thread = threading.Thread(
+                    target=run_voice_recognition, 
+                    args=(self.app_master,), 
+                    daemon=True
+                )
+            else:
+                self.voice_thread = threading.Thread(target=self._bg_voice_loop, daemon=True)
+                
             self.voice_thread.start()
         else:
-            print("UI Trigger -> Stopping Voice Service. Raising stop flag...")
+            print("UI Trigger -> Closing microphone listener channels...")
             self.app_master.voice_running = False
 
     def toggle_eye_service(self):
+        # 1. Grab what target the user selected in the dropdown menu
+        selected_mode = self.mode_dropdown.get()
+        self.app_master.active_processing_target = selected_mode
+
         if self.eye_switch.get() == 1:
             self.app_master.eye_running = True
-            print("UI Trigger -> Starting Eye Tracking Camera Worker Thread...")
-            self.eye_thread = threading.Thread(target=self._bg_eye_loop, daemon=True)
+            print(f"UI Trigger -> Initializing Background Line for target: {selected_mode}")
+            
+            # 2. Spin up the processing thread pointing to our real camera engine pipeline
+            self.eye_thread = threading.Thread(target=self._camera_hardware_pipeline, daemon=True)
             self.eye_thread.start()
         else:
-            print("UI Trigger -> Stopping Eye Tracking Camera. Raising stop flag...")
+            print("UI Trigger -> Closing tracking line context pipelines...")
             self.app_master.eye_running = False
+            self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
+            self.video_label.pack(expand=True, pady=40)
 
     # ========================================================
-    # HARDWARE SERVICE RE-ENTRANT WORKERS
+    # BACKGROUND LIVE CAMERA PROCESSING PIPELINE
     # ========================================================
+    def _camera_hardware_pipeline(self):
+        """Dedicated worker thread that queries chosen sub-scripts or falls back cleanly."""
+        current_choice = self.app_master.active_processing_target
+        print(f">>> [Eye Thread] Booting engine stream route: {current_choice}")
+
+        # Route 1: Run your high-precision eyeball tracking script
+        if "Eyeball" in current_choice and run_eyeball_tracking is not None:
+            run_eyeball_tracking(app_callback=self._process_and_draw_frame)
+            
+        # Route 2: Run your backup face tracking script  
+        elif "Face" in current_choice and run_face_detection is not None:
+            run_face_detection(app_callback=self._process_and_draw_frame)
+            
+        # Fallback Simulation: Runs if your scripts are missing or empty
+        else:
+            cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+            while self.app_master.eye_running:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if not self._process_and_draw_frame(frame):
+                    break
+            cap.release()
+
+    def _process_and_draw_frame(self, frame):
+        """Accepts an OpenCV frame matrix, formats it for Tkinter, and prints it onto the UI."""
+        from PIL import Image, ImageTk
+        import cv2
+
+        if not self.app_master.eye_running:
+            return False
+
+        try:
+            # OpenCV processes frames in BGR format; flip it to standard RGB
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Resize image smoothly to fit inside our dashboard placeholder card
+            pil_img = Image.fromarray(rgb_frame)
+            resized_img = pil_img.resize((420, 200), Image.Resampling.LANCZOS)
+            
+            # Cast image object into a standard Tkinter PhotoImage element
+            tk_img = ImageTk.PhotoImage(image=resized_img)
+            
+            # Safely push the image update to the UI label element
+            self.video_label.configure(image=tk_img, text="")
+            self.video_label.image = tk_img  # Keep reference to prevent garbage collection
+            
+            self.video_label.pack(fill="both", expand=True, padx=0, pady=0)
+            return True
+        except Exception as e:
+            print(f"Frame translation rendering failure anomaly: {e}")
+            return False
+
+    # Fallback simulation functions if imports fail
     def _bg_voice_loop(self):
         print(">>> [Voice Thread] Connected to Microphone Stream. Listening...")
         while self.app_master.voice_running:
-            print(">>> [Voice Thread] Listening for commands...")
             time.sleep(2)
-        print(">>> [Voice Thread] Stopped safely. Microphone pipeline released.")
-
-    def _bg_eye_loop(self):
-        print(">>> [Eye Thread] Connected to Webcam Hardware Link. Processing frames...")
-        while self.app_master.eye_running:
-            print(">>> [Eye Thread] Extracting facial landmark array matrix data...")
-            time.sleep(1.5)
-        print(">>> [Eye Thread] Stopped safely. Webcam pipeline hardware link released.")
