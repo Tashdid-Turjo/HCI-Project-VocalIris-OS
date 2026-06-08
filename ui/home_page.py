@@ -161,35 +161,36 @@ class HomePage(ctk.CTkFrame):
             print("UI Trigger -> Closing tracking line context pipelines...")
             self.app_master.eye_running = False
             
-            # --- FIXED: Clear the frozen image and completely reset the original text look ---
+            # CRITICAL: Force the layout to reset right now
             self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
-            self.video_label.image = None  # Clear the garbage collection reference
-            
-            # Repack it centrally exactly how it looks when initially opening the app
+            self.video_label.image = None  
             self.video_label.pack(fill="none", expand=True, pady=40)
 
     # --- TASK 2: PUT THE BRAND NEW DROPDOWN AUTOMATION FUNCTION HERE ---
     def on_dropdown_change(self, selected_mode):
         """Triggers immediately when the user changes the dropdown selection."""
         print(f"UI Event -> User switched dropdown to: {selected_mode}")
-        
-        # Always update the active target state
         self.app_master.active_processing_target = selected_mode
         
-        # Hot-reload: If tracking is running, reboot the engine cleanly in the background
+        # If the camera loop is actively running, handle the change carefully
         if self.eye_switch.get() == 1 and self.app_master.eye_running:
-            print(">>> [Hot-Reload] Changing processing profiles on the fly. Rebooting camera thread...")
+            print(">>> [Hot-Reload] Changing processing profiles. Stopping old thread first...")
             
-            # Stop the current engine loop safely
+            # 1. Force the old engine loop to exit completely
             self.app_master.eye_running = False
             
-            # Give the previous hardware pipeline loop a split second to release the camera handle
-            time.sleep(0.3)
+            # 2. Clear UI instantly so the old thread can't pass any more frames
+            self.video_label.configure(image="", text="[ Switching Engine Profiles... ]")
+            self.video_label.image = None
             
-            # Fire up the brand new target script thread immediately!
-            self.app_master.eye_running = True
-            self.eye_thread = threading.Thread(target=self._camera_hardware_pipeline, daemon=True)
-            self.eye_thread.start()
+            # 3. Use standard Tkinter .after() instead of time.sleep() 
+            # This pauses for 400ms without freezing the UI, giving the camera hardware time to drop safely!
+            self.after(400, self._restart_eye_thread)
+        else:
+            # If the switch is off, just reset the layout text cleanly
+            self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
+            self.video_label.image = None
+            self.video_label.pack(fill="none", expand=True, pady=40)
 
     # ========================================================
     # BACKGROUND LIVE CAMERA PROCESSING PIPELINE
@@ -220,7 +221,11 @@ class HomePage(ctk.CTkFrame):
         from PIL import Image, ImageTk
         import cv2
 
-        if not self.app_master.eye_running:
+        # CRITICAL CHECK: If the switch was turned off, reject the frame instantly!
+        if not self.app_master.eye_running or self.eye_switch.get() == 0:
+            self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
+            self.video_label.image = None
+            self.video_label.pack(fill="none", expand=True, pady=40)
             return False
 
         try:
@@ -229,13 +234,25 @@ class HomePage(ctk.CTkFrame):
             resized_img = pil_img.resize((420, 200), Image.Resampling.LANCZOS)
             tk_img = ImageTk.PhotoImage(image=resized_img)
             
-            self.video_label.configure(image=tk_img, text="")
-            self.video_label.image = tk_img  
-            self.video_label.pack(fill="both", expand=True, padx=0, pady=0)
-            return True
+            # Double check right before drawing to prevent racing frames
+            if self.app_master.eye_running and self.eye_switch.get() == 1:
+                self.video_label.configure(image=tk_img, text="")
+                self.video_label.image = tk_img  
+                self.video_label.pack(fill="both", expand=True, padx=0, pady=0)
+                return True
+            else:
+                return False
         except Exception as e:
             print(f"Frame translation rendering failure anomaly: {e}")
             return False
+        
+    def _restart_eye_thread(self):
+        """Helper function that fires up the new camera thread safely after the delay."""
+        if self.eye_switch.get() == 1: # Double check if user didn't turn it off during the pause
+            print(">>> [Hot-Reload] Old thread dropped safely. Launching new engine thread now...")
+            self.app_master.eye_running = True
+            self.eye_thread = threading.Thread(target=self._camera_hardware_pipeline, daemon=True)
+            self.eye_thread.start()
 
     # Fallback simulation functions if imports fail
     def _bg_voice_loop(self):
