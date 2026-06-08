@@ -160,8 +160,13 @@ class HomePage(ctk.CTkFrame):
         else:
             print("UI Trigger -> Closing tracking line context pipelines...")
             self.app_master.eye_running = False
+            
+            # --- FIXED: Clear the frozen image and completely reset the original text look ---
             self.video_label.configure(image="", text="[ Hardware Webcam Feed Offline ]")
-            self.video_label.pack(expand=True, pady=40)
+            self.video_label.image = None  # Clear the garbage collection reference
+            
+            # Repack it centrally exactly how it looks when initially opening the app
+            self.video_label.pack(fill="none", expand=True, pady=40)
 
     # --- TASK 2: PUT THE BRAND NEW DROPDOWN AUTOMATION FUNCTION HERE ---
     def on_dropdown_change(self, selected_mode):
