@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('model', 'model'), ('face_landmarker.task', '.'), ('C:\\Users\\iTest-Trainee\\AppData\\Roaming\\Python\\Python314\\site-packages\\customtkinter', 'customtkinter/')],
+    datas=[('model', 'model'), ('face_landmarker.task', '.'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\vosk', 'vosk/'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\customtkinter', 'customtkinter/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
