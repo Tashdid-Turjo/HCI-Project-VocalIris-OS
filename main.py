@@ -9,7 +9,6 @@ from ui.settings_page import SettingsPage
 from ui.profile_page import ProfilePage
 from ui.help_page import HelpPage
 
-    
 class VocalIrisApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -34,6 +33,24 @@ class VocalIrisApp(ctk.CTk):
         self.settings = self.load_configuration()
 
         # ==========================================
+        # LOCALIZATION FOR SIDEBAR MAPPING
+        # ==========================================
+        self.sidebar_translations = {
+            "English": {
+                "home": "Home",
+                "settings": "App Settings",
+                "profile": "Profile",
+                "help": "Help & Supports"
+            },
+            "Bangla": {
+                "home": "হোম",
+                "settings": "অ্যাপ সেটিংস",
+                "profile": "প্রোফাইল",
+                "help": "হেল্প এবং সাপোর্ট"
+            }
+        }
+
+        # ==========================================
         # 2. MAIN WINDOW CONFIGURATION
         # ==========================================
         self.title("VocalIris OS - Desktop Client")
@@ -56,17 +73,21 @@ class VocalIrisApp(ctk.CTk):
         )
         self.logo_label.grid(row=0, column=0, padx=20, pady=20)
 
-        self.btn_home = ctk.CTkButton(self.sidebar_frame, text="Home", command=lambda: self.switch_page("Home"))
+        # Initialize buttons with empty strings (assigned dynamically below)
+        self.btn_home = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Home"))
         self.btn_home.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
 
-        self.btn_settings = ctk.CTkButton(self.sidebar_frame, text="App Settings", command=lambda: self.switch_page("Settings"))
+        self.btn_settings = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Settings"))
         self.btn_settings.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-        self.btn_profile = ctk.CTkButton(self.sidebar_frame, text="Profile", command=lambda: self.switch_page("Profile"))
+        self.btn_profile = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Profile"))
         self.btn_profile.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
-        self.btn_help = ctk.CTkButton(self.sidebar_frame, text="Help & Supports", command=lambda: self.switch_page("Help"))
+        self.btn_help = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Help"))
         self.btn_help.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+
+        # Set initial sidebar translation labels
+        self.update_sidebar_languages()
 
         # Dynamic Content Panel
         self.content_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -96,13 +117,27 @@ class VocalIrisApp(ctk.CTk):
                 json.dump(self.settings, file, indent=4)
         except Exception:
             pass
+        
+        # If language parameter updates, immediately synchronize navigation components
+        if key == "language":
+            self.update_sidebar_languages()
+
+    def update_sidebar_languages(self):
+        """Redraws the sidebar UI strings using the correct language profile."""
+        lang = self.settings.get("language", "English")
+        bundle = self.sidebar_translations.get(lang, self.sidebar_translations["English"])
+        
+        self.btn_home.configure(text=bundle["home"])
+        self.btn_settings.configure(text=bundle["settings"])
+        self.btn_profile.configure(text=bundle["profile"])
+        self.btn_help.configure(text=bundle["help"])
 
     # ==========================================
     # SMART ROUTER CONTROLLER ENGINE
     # ==========================================
-    def switch_page(self, page_name):
-        # FIX 1: If the user clicks the button for the page already open, ignore it completely!
-        if self.active_page_name == page_name:
+    def switch_page(self, page_name, force_reload=False):
+        # Allow bypass of the identical-page blocking mechanism if a force_reload is needed
+        if self.active_page_name == page_name and not force_reload:
             print(f"Ignored duplicate click for: {page_name}")
             return
 
@@ -114,7 +149,6 @@ class VocalIrisApp(ctk.CTk):
             widget.destroy()
             
         if page_name == "Home":
-            # Pass self (app instance) so Home can read/write global states
             self.active_page = HomePage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             
@@ -123,11 +157,13 @@ class VocalIrisApp(ctk.CTk):
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Profile":
-            self.active_page = ProfilePage(self.content_frame)
+            # Pass app_instance so profile page can also read language configuration
+            self.active_page = ProfilePage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Help":
-            self.active_page = HelpPage(self.content_frame)
+            # Pass app_instance so help page can also read language configuration
+            self.active_page = HelpPage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             
         print(f"Switched panel router state to: {page_name}")
