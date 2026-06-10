@@ -4,6 +4,8 @@ import pyautogui
 import numpy as np
 import queue
 import json
+import os
+import sys
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
 import time
@@ -22,8 +24,21 @@ def run_voice_recognition(app_instance):
     Launches your Vosk engine listener module cleanly.
     Loops continuously until app_instance.voice_running is set to False.
     """
-    VOSK_MODEL_PATH = "model" 
-    model = Model(VOSK_MODEL_PATH)
+    # FIX 1: Resolve the dynamic model directory path context for PyInstaller
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+    VOSK_MODEL_PATH = os.path.join(base_path, "model") 
+    
+    print(f"[Voice Sync] Initializing Acoustic Model from location: {VOSK_MODEL_PATH}")
+    try:
+        model = Model(VOSK_MODEL_PATH)
+    except Exception as e:
+        print(f">>> [CRITICAL] Vosk Voice Engine failed to load model: {e}")
+        return
+        
     rec = KaldiRecognizer(model, 16000, '["click", "select", "double", "right", "close"]')
     
     # Open local audio recording pipe streams
@@ -60,9 +75,23 @@ def run_eyeball_tracking(app_callback):
     Passes frames directly back to your CustomTkinter dashboard framework.
     """
     pyautogui.FAILSAFE = False
-    model_path = 'face_landmarker.task' 
+    
+    # FIX 2: Bulletproof Binary Buffer Fix for MediaPipe Face Landmarker
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+    model_path = os.path.join(base_path, 'face_landmarker.task') 
 
-    base_options = python.BaseOptions(model_asset_path=model_path)
+    try:
+        with open(model_path, 'rb') as f:
+            model_buffer = f.read()
+    except Exception as e:
+        print(f"Error loading model file at {model_path}: {e}")
+        return
+
+    base_options = python.BaseOptions(model_asset_buffer=model_buffer)
     options = vision.FaceLandmarkerOptions(
         base_options=base_options,
         output_face_blendshapes=True,
@@ -82,9 +111,28 @@ def run_eyeball_tracking(app_callback):
     prev_x, prev_y = pyautogui.position()
     last_manual_move_time = 0
 
-    cam = cv2.VideoCapture(1, cv2.CAP_DSHOW)
-    screen_w, screen_h = pyautogui.size()
+    # FIX 3: Setup Camera with Dynamic Fallback Scan Loop (USB/OBS Virtual Cams)
+    cam = None
+    for index in [0, 1, 2, 3]:
+        print(f"[Camera Sync] Attempting to hook into eyeball tracker index: {index} via DirectShow...")
+        test_cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+        
+        if test_cap.isOpened():
+            ret, frame = test_cap.read()
+            if ret:
+                print(f">>> [Success] Eyeball tracker bound cleanly to Index {index}!")
+                cam = test_cap
+                break
+            else:
+                test_cap.release()
+        else:
+            test_cap.release()
 
+    if cam is None:
+        print(">>> [CRITICAL] Eye tracking engine failed fallback scanning. Initializing default...")
+        cam = cv2.VideoCapture(0)
+
+    screen_w, screen_h = pyautogui.size()
     print("VocalIris OS Engine: High-Precision Eyeball Tracking Loop Engaged.")
 
     while cam.isOpened():
