@@ -3,11 +3,22 @@
 
 import os
 import json
+import sys
 import customtkinter as ctk
 from ui.home_page import HomePage
 from ui.settings_page import SettingsPage
 from ui.profile_page import ProfilePage
 from ui.help_page import HelpPage
+
+
+def get_asset_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class VocalIrisApp(ctk.CTk):
     def __init__(self):
@@ -57,6 +68,9 @@ class VocalIrisApp(ctk.CTk):
         self.geometry("1000x600")
         ctk.set_appearance_mode(self.settings["theme"])
         ctk.set_default_color_theme("blue")
+
+        # CHANGE THIS LINE TO USE THE HELPER FUNCTION:
+        self.iconbitmap(get_asset_path("logo.ico"))
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
