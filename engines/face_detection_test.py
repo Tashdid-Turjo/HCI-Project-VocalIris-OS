@@ -2,6 +2,8 @@ import cv2
 import mediapipe as mp
 import pyautogui
 import time
+import os
+import sys
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
@@ -10,10 +12,27 @@ def run_face_detection(app_callback):
     Wraps your backup face detection engine.
     Feeds frames back to the UI canvas instead of opening cv2.imshow.
     """
-    # 1. Setup the Task Base
-    model_path = 'face_landmarker.task' 
+    # 1. Setup the Task Base (Patched dynamically for standalone .exe execution)
+    if getattr(sys, 'frozen', False):
+        # Running inside the compiled PyInstaller .exe context
+        base_path = sys._MEIPASS
+    else:
+        # Running as a loose script in Git Bash
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+    model_path = os.path.join(base_path, 'face_landmarker.task') 
 
-    base_options = python.BaseOptions(model_asset_path=model_path)
+    # CRITICAL FIX: Read the model file directly into memory as a binary buffer
+    # This prevents MediaPipe from crashing inside the compiled executable wrapper!
+    try:
+        with open(model_path, 'rb') as f:
+            model_buffer = f.read()
+    except Exception as e:
+        print(f"Error loading model file at {model_path}: {e}")
+        return
+
+    # Pass the raw memory buffer instead of a file path string
+    base_options = python.BaseOptions(model_asset_buffer=model_buffer)
     options = vision.FaceLandmarkerOptions(
         base_options=base_options,
         output_face_blendshapes=True,
@@ -21,8 +40,28 @@ def run_face_detection(app_callback):
         num_faces=1)
     detector = vision.FaceLandmarker.create_from_options(options)
 
-    # 2. Setup Camera (Using Index 1 as per your hardware setup)
-    cam = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+    # 2. Setup Camera (Dynamic Fallback Scan Loop for USB/OBS Virtual Cams)
+    cam = None
+    for index in [0, 1, 2, 3]:
+        print(f"[Camera Sync] Attempting to hook into device index: {index} via DirectShow...")
+        test_cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+        
+        if test_cap.isOpened():
+            ret, frame = test_cap.read()
+            if ret:
+                print(f">>> [Success] Camera engine successfully bound to Index {index}!")
+                cam = test_cap
+                break
+            else:
+                test_cap.release()
+        else:
+            test_cap.release()
+
+    # Safety emergency fallback if everything fails to scan
+    if cam is None:
+        print(">>> [CRITICAL] No active hardware or virtual cameras detected on indexes 0-3. Attempting default...")
+        cam = cv2.VideoCapture(0)
+
     screen_w, screen_h = pyautogui.size()
 
     # Variables for manual movement detection
@@ -30,7 +69,7 @@ def run_face_detection(app_callback):
     last_manual_move_time = 0
 
     if not cam.isOpened():
-        print("Error: Could not open camera at Index 1.")
+        print("Error: Could not open camera framework entirely.")
         return
 
     print("VocalIris OS Engine: Face Tracking Loop Engaged.")
