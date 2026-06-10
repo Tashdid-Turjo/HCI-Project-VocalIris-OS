@@ -3226,6 +3226,7 @@
    'C:\\Program Files\\Python314\\DLLs\\libssl-3.dll',
    'BINARY'),
   ('logo.ico', 'D:\\repo\\HCI-Project-VocalIris-OS\\logo.ico', 'DATA'),
+  ('logo.png', 'D:\\repo\\HCI-Project-VocalIris-OS\\logo.png', 'DATA'),
   ('main_debug.exe',
    'D:\\repo\\HCI-Project-VocalIris-OS\\build\\main_debug\\main_debug.exe',
    'EXECUTABLE'),

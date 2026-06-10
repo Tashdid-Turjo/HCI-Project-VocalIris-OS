@@ -80,25 +80,43 @@ class VocalIrisApp(ctk.CTk):
         # ==========================================
         self.sidebar_frame = ctk.CTkFrame(self, width=200, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(5, weight=1) 
+        
+        # Adjust row weights to make room for your logo image
+        self.sidebar_frame.grid_rowconfigure(6, weight=1) 
 
+        # 1. LOAD THE SIDEBAR PNG IMAGE (Using our asset helper)
+        from PIL import Image  # Ensure PIL Image is available
+        
+        self.sidebar_logo_image = ctk.CTkImage(
+            light_image=Image.open(get_asset_path("logo.png")),
+            dark_image=Image.open(get_asset_path("logo.png")),
+            size=(120, 120)  # You can adjust this size (width, height) to make it look perfect!
+        )
+
+        # 2. RENDER THE TEXT HEADER
         self.logo_label = ctk.CTkLabel(
             self.sidebar_frame, text="VocalIris OS", font=ctk.CTkFont(size=20, weight="bold")
         )
-        self.logo_label.grid(row=0, column=0, padx=20, pady=20)
+        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 5))
 
-        # Initialize buttons with empty strings (assigned dynamically below)
+        # 3. NEW: RENDER THE LOGO IMAGE DIRECTLY UNDERNEATH THE TEXT
+        self.logo_image_label = ctk.CTkLabel(
+            self.sidebar_frame, text="", image=self.sidebar_logo_image
+        )
+        self.logo_image_label.grid(row=1, column=0, padx=20, pady=(0, 20))
+
+        # 4. SHIFT THE BUTTON ROWS DOWN BY 1 TO ACCOMMODATE THE LOGO IMAGE
         self.btn_home = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Home"))
-        self.btn_home.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
+        self.btn_home.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
         self.btn_settings = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Settings"))
-        self.btn_settings.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        self.btn_settings.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
         self.btn_profile = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Profile"))
-        self.btn_profile.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+        self.btn_profile.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
         self.btn_help = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Help"))
-        self.btn_help.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+        self.btn_help.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
         # Set initial sidebar translation labels
         self.update_sidebar_languages()

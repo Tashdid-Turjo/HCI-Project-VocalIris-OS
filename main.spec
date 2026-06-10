@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('logo.ico', '.'), ('model', 'model'), ('face_landmarker.task', '.'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\vosk', 'vosk/'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\customtkinter', 'customtkinter/')]
+datas = [('logo.ico', '.'), ('logo.png', '.'), ('model', 'model'), ('face_landmarker.task', '.'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\vosk', 'vosk/'), ('D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\customtkinter', 'customtkinter/')]
 binaries = []
 hiddenimports = []
 tmp_ret = collect_all('mediapipe')
