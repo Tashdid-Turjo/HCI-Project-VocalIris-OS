@@ -76,7 +76,7 @@
  [],
  False,
  False,
- 1781083389,
+ 1781084413,
  [('run.exe',
    'D:\\repo\\HCI-Project-VocalIris-OS\\venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')],
