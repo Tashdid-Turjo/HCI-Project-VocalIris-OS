@@ -184,57 +184,49 @@ def run_eyeball_tracking(app_callback):
 
         if detection_result and detection_result.face_landmarks:
             landmarks = detection_result.face_landmarks[0]
-           
+            
             iris = landmarks[474]
             l_corner, r_corner = landmarks[33], landmarks[133]
             t_edge, b_edge = landmarks[159], landmarks[145]
-
 
             # 1. Calculate the raw relative ratios inside the eye box boundaries
             raw_rel_x = (iris.x - l_corner.x) / (r_corner.x - l_corner.x)
             raw_rel_y = (iris.y - t_edge.y) / (b_edge.y - t_edge.y)
 
-
             # 2. RUNTIME AUTO-CALIBRATION MATRIX
             if calibration_frames_gathered < REQUIRED_CALIBRATION_FRAMES:
-                # Accumulate the running center data while the user looks at the screen
                 if calibration_frames_gathered == 0:
                     calibrated_center_x = raw_rel_x
                     calibrated_center_y = raw_rel_y
                 else:
                     calibrated_center_x = (calibrated_center_x + raw_rel_x) / 2
                     calibrated_center_y = (calibrated_center_y + raw_rel_y) / 2
-               
+                
                 calibration_frames_gathered += 1
-                # Put a temporary message on the UI frame to show it's calibrating
                 cv2.putText(frame, "Calibrating... Look Center", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-               
+                
             else:
                 # 3. USE CALIBRATED OFFSETS
-                # Find how far your eye shifts relative to YOUR specific resting center point
                 offset_x = raw_rel_x - calibrated_center_x
                 offset_y = raw_rel_y - calibrated_center_y
 
-
-                # GAIN CONTROLS: Normalized tracking gears
-                GAIN_X = 6.5
-                GAIN_Y = 5.5
-
+                # CRITICAL SENSITIVITY UPGRADE
+                GAIN_X = 14.0
+                GAIN_Y = 11.0
+                SMOOTH_FACTOR = 0.18
 
                 # Map directly outwards from the true center pixels of your monitor layout
                 target_x = (screen_w / 2) + (offset_x * GAIN_X * screen_w)
                 target_y = (screen_h / 2) + (offset_y * GAIN_Y * screen_h)
 
-
                 # 4. Smoothing Filter Engine
                 curr_x = (target_x * SMOOTH_FACTOR) + (prev_x * (1 - SMOOTH_FACTOR))
                 curr_y = (target_y * SMOOTH_FACTOR) + (prev_y * (1 - SMOOTH_FACTOR))
 
-
                 # 5. Screen Boundary Safety Clip
                 final_x = int(np.clip(curr_x, 0, screen_w - 1))
                 final_y = int(np.clip(curr_y, 0, screen_h - 1))
-               
+                
                 # Execute Cursor Position Update
                 if time_since_manual > RESUME_DELAY:
                     if abs(final_x - prev_x) > DEADZONE or abs(final_y - prev_y) > DEADZONE:
