@@ -7,6 +7,9 @@ class ProfilePage(ctk.CTkFrame):
         
         self.app_master = app_instance
         self.current_lang = self.app_master.settings.get("language", "English")
+        
+        # Extract base font scale factor safely as an integer
+        base_font_size = int(self.app_master.settings.get("font_size", 14))
 
         # ==========================================
         # LOCALIZATION (TRANSLATION) DICTIONARY
@@ -27,7 +30,7 @@ class ProfilePage(ctk.CTkFrame):
                 "radio_browsing": "ওয়েব ব্রাউজিং মোড (উচ্চ-গতিশীল আই ট্র্যাকিং এবং জেসচার)",
                 "radio_reading": "রিডিং মোড (ড্যাম্পড স্মুথ কার্সার এবং কুইক স্ক্রোলিং শর্টকাট)",
                 "data_title": "ডেটা পোর্টেবিলিটি এবং মাইগ্রেশন",
-                "data_desc": "শেয়ার বা ব্যাকআপ করার জন্য আপনার লোকাল আই-ক্যালিব্রেশন ম্যাট্রিক্স মান, সিস্টেম পছন্দসমূহ এবং নিয়মাবলীর ডিকশনারি একটি এক্সটার্নাল ফাইল হিসেবে এক্সপোর্ট করুন।",
+                "data_desc": "শেয়ার বা ব্যাকআপ করার জন্য আপনার লোকাল আই-ক্যালিব্রেশন ম্যাট্রিক্স মান, সিস্টেম পছন্দসমূহ এবং নিয়মাবলীর ডিকশনারি একটি এক্সটার্নাল ফাইল হিসেবে এক্সপোর্ট করুন।",
                 "export_btn": "ইউজার সেটিংস ম্যাট্রিক্স এক্সপোর্ট করুন"
             }
         }
@@ -35,10 +38,10 @@ class ProfilePage(ctk.CTkFrame):
         # Select the active text translation bundle
         text_bundle = self.translations.get(self.current_lang, self.translations["English"])
         
-        # Page Title Header
+        # Page Title Header (Proportional Scaling: Base + 10)
         self.title_label = ctk.CTkLabel(
             self, text=text_bundle["title"], 
-            font=ctk.CTkFont(size=24, weight="bold")
+            font=ctk.CTkFont(size=base_font_size + 10, weight="bold")
         )
         self.title_label.pack(pady=(10, 30), anchor="w", padx=20)
 
@@ -48,9 +51,10 @@ class ProfilePage(ctk.CTkFrame):
         self.mode_card = ctk.CTkFrame(self)
         self.mode_card.pack(fill="x", padx=20, pady=10)
 
+        # Mode Selection Subheader (Proportional Scaling: Base + 2)
         self.mode_title = ctk.CTkLabel(
             self.mode_card, text=text_bundle["mode_title"], 
-            font=ctk.CTkFont(size=16, weight="bold")
+            font=ctk.CTkFont(size=base_font_size + 2, weight="bold")
         )
         self.mode_title.pack(anchor="w", padx=20, pady=(15, 10))
 
@@ -60,13 +64,15 @@ class ProfilePage(ctk.CTkFrame):
 
         self.radio_browsing = ctk.CTkRadioButton(
             self.mode_card, text=text_bundle["radio_browsing"],
-            variable=self.profile_var, value="browsing", command=self.sync_profile_mode
+            variable=self.profile_var, value="browsing", command=self.sync_profile_mode,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.radio_browsing.pack(anchor="w", padx=30, pady=10)
 
         self.radio_reading = ctk.CTkRadioButton(
             self.mode_card, text=text_bundle["radio_reading"],
-            variable=self.profile_var, value="reading", command=self.sync_profile_mode
+            variable=self.profile_var, value="reading", command=self.sync_profile_mode,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.radio_reading.pack(anchor="w", padx=30, pady=10)
 
@@ -76,23 +82,28 @@ class ProfilePage(ctk.CTkFrame):
         self.data_card = ctk.CTkFrame(self)
         self.data_card.pack(fill="x", padx=20, pady=15)
 
+        # Portability Subheader (Proportional Scaling: Base + 2)
         self.data_title = ctk.CTkLabel(
             self.data_card, text=text_bundle["data_title"], 
-            font=ctk.CTkFont(size=16, weight="bold")
+            font=ctk.CTkFont(size=base_font_size + 2, weight="bold")
         )
         self.data_title.pack(anchor="w", padx=20, pady=(15, 5))
 
+        # Description Readout (Proportional Scaling: Base - 2 for secondary metadata layout)
         self.data_desc = ctk.CTkLabel(
             self.data_card, 
             text=text_bundle["data_desc"],
-            text_color="#888888", font=ctk.CTkFont(size=12),
+            text_color="#888888", 
+            font=ctk.CTkFont(size=base_font_size - 2),
             wraplength=750, justify="left" # Added wrapping to keep long text formatted cleanly
         )
         self.data_desc.pack(anchor="w", padx=20, pady=(0, 15))
 
+        # Export Action Button
         self.export_btn = ctk.CTkButton(
             self.data_card, text=text_bundle["export_btn"], 
-            command=self.trigger_export_alert
+            command=self.trigger_export_alert,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.export_btn.pack(anchor="w", padx=20, pady=(0, 15))
 

@@ -20,6 +20,9 @@ class HomePage(ctk.CTkFrame):
         self.app_master = app_instance
         self.current_lang = self.app_master.settings.get("language", "English")
         
+        # Extract base font scale factor safely as an integer
+        base_font_size = int(self.app_master.settings.get("font_size", 14))
+        
         # Configure layout weights
         self.grid_columnconfigure(0, weight=1, uniform="equal")
         self.grid_columnconfigure(1, weight=1, uniform="equal")
@@ -45,17 +48,17 @@ class HomePage(ctk.CTkFrame):
         )
 
         cheat_sheet_bn = (
-            "--- ভয়েস কমান্ড চিট-শিট ডিকশনারি ---\n\n"
-            "▶ নেভিগেশন এবং সিস্টেম অ্যাকশনসমূহ:\n"
-            " • 'Scroll down' -> ওয়েবপেজ স্ক্রোল করে নিচের দিকে নামুন\n"
-            " • 'Move pointer' -> মাউসের কার্সার পজিশন সমন্বয় করুন\n"
+            "--- ভয়েস কমান্ড চিট-শিট ডিকশনারি ---\n\n"
+            "▶ নেভিগেশন এবং SYSTEM অ্যাকশনসমূহ:\n"
+            " • 'Scroll down' -> ওয়েবপেজ স্ক্রোল করে নিচের দিকে নামুন\n"
+            " • 'Move pointer' -> মাউসের কার্সার পজিশন সমন্বয় করুন\n"
             " • 'Left click' -> সিলেক্টেড আইটেমে লেফট-ক্লিক করুন\n"
             " • 'Right click' -> কনটেক্সট মেনু বা প্রোপার্টি ট্রে ওপেন করুন\n"
             " • 'Double click' -> ডাবল-ক্লিক করে সিলেকশন রান করুন\n\n"
             "▶ টেক্সট ফিল্ড এবং কীবোর্ড পাইপলাইনসমূহ:\n"
-            " • 'Open keyboard' -> ভার্চুয়াল সফট-কীবোর্ড ওভারলে চালু করুন\n"
+            " • 'Open keyboard' -> ভার্চুয়াল সফট-কীবোর্ড ওভারলে চালু করুন\n"
             " • 'Type [Letter]' -> নির্দিষ্ট ক্যারেক্টার বা অক্ষর টাইপ করুন\n"
-            " • 'Delete word' -> ব্যাকস্পেস দিয়ে পূর্ববর্তী শব্দ মুছে ফেলুন\n"
+            " • 'Delete word' -> ব্যাকস্পেস দিয়ে পূর্ববর্তী শব্দ মুছে ফেলুন\n"
             " • 'Copy text' -> হাইলাইটেড টেক্সট ক্লিপবোর্ডে সেভ করুন\n"
             " • 'Paste text' -> ক্লিপবোর্ডের টেক্সট নির্দিষ্ট স্থানে পেস্ট করুন"
         )
@@ -78,15 +81,15 @@ class HomePage(ctk.CTkFrame):
                 "cheat_sheet": cheat_sheet_en
             },
             "Bangla": {
-                "calib_title": "সিস্টেম অ্যালাইনমেন্ট প্রয়োজন",
+                "calib_title": "সিস্টেম অ্যালাইনমেন্ট প্রয়োজন",
                 "calib_btn": "ক্যালিব্রেশন উইজার্ড চালু করুন",
-                "voice_title": "🗣️ ভয়েস কন্ট্রোল ইঞ্জিন",
-                "voice_switch": "ভয়েস সার্ভিস লিসেনার চালু করুন",
+                "voice_title": "🗣️ ভয়েস কন্ট্রোল ইঞ্জিন",
+                "voice_switch": "ভয়েস সার্ভিস লিসেনার চালু করুন",
                 "eye_title": "👁️ আই ট্র্যাকিং ইঞ্জিন",
                 "eye_switch": "আই ট্র্যাকিং ইঞ্জিন চালু করুন",
-                "dropdown_lbl": "সক্রিয় এক্সট্রাকশন প্রসেসিং টার্গেট:",
+                "dropdown_lbl": "সক্রিয় এক্সট্রাকশন প্রসেসিং টার্গেট:",
                 "dropdown_opts": ["আইবল ট্র্যাকিং (উচ্চ নির্ভুলতা)", "ফেস ট্র্যাকিং (ব্যাকআপ প্রোফাইল)"],
-                "cam_offline": "[ হার্ডওয়্যার ওয়েবক্যাম ফিড অফলাইন ]",
+                "cam_offline": "[ হার্ডওয়্যার ওয়েবক্যাম ফিড অফলাইন ]",
                 "cam_switching": "[ ইঞ্জিন প্রোফাইল পরিবর্তন হচ্ছে... ]",
                 "cheat_sheet": cheat_sheet_bn
             }
@@ -102,12 +105,18 @@ class HomePage(ctk.CTkFrame):
         self.calibration_card.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         
         self.calib_title = ctk.CTkLabel(
-            self.calibration_card, text=self.text_bundle["calib_title"], font=ctk.CTkFont(size=16, weight="bold")
+            self.calibration_card, 
+            text=self.text_bundle["calib_title"], 
+            font=ctk.CTkFont(size=base_font_size + 2, weight="bold")
         )
         self.calib_title.pack(side="left", padx=20, pady=15)
         
         self.calib_btn = ctk.CTkButton(
-            self.calibration_card, text=self.text_bundle["calib_btn"], fg_color="#2b82c9", hover_color="#1e5d91"
+            self.calibration_card, 
+            text=self.text_bundle["calib_btn"], 
+            fg_color="#2b82c9", 
+            hover_color="#1e5d91",
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.calib_btn.pack(side="right", padx=20, pady=15)
 
@@ -118,20 +127,29 @@ class HomePage(ctk.CTkFrame):
         self.voice_card.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         
         self.voice_title = ctk.CTkLabel(
-            self.voice_card, text=self.text_bundle["voice_title"], font=ctk.CTkFont(size=16, weight="bold")
+            self.voice_card, 
+            text=self.text_bundle["voice_title"], 
+            font=ctk.CTkFont(size=base_font_size + 2, weight="bold")
         )
         self.voice_title.pack(anchor="w", padx=15, pady=15)
         
         self.voice_switch = ctk.CTkSwitch(
-            self.voice_card, text=self.text_bundle["voice_switch"], command=self.toggle_voice_service
+            self.voice_card, 
+            text=self.text_bundle["voice_switch"], 
+            command=self.toggle_voice_service,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.voice_switch.pack(anchor="w", padx=20, pady=5)
         
         if self.app_master.voice_running:
             self.voice_switch.select()
 
-        # Command Registry Text Box
-        self.cmd_box = ctk.CTkTextbox(self.voice_card, activate_scrollbars=True)
+        # Command Registry Text Box (Applied family font handling for cross-scale alignment layout)
+        self.cmd_box = ctk.CTkTextbox(
+            self.voice_card, 
+            activate_scrollbars=True,
+            font=ctk.CTkFont(family="Courier", size=base_font_size)
+        )
         self.cmd_box.pack(fill="both", expand=True, padx=15, pady=15)
         
         self.cmd_box.insert("0.0", self.text_bundle["cheat_sheet"])
@@ -144,12 +162,17 @@ class HomePage(ctk.CTkFrame):
         self.eye_card.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         
         self.eye_title = ctk.CTkLabel(
-            self.eye_card, text=self.text_bundle["eye_title"], font=ctk.CTkFont(size=16, weight="bold")
+            self.eye_card, 
+            text=self.text_bundle["eye_title"], 
+            font=ctk.CTkFont(size=base_font_size + 2, weight="bold")
         )
         self.eye_title.pack(anchor="w", padx=15, pady=15)
         
         self.eye_switch = ctk.CTkSwitch(
-            self.eye_card, text=self.text_bundle["eye_switch"], command=self.toggle_eye_service
+            self.eye_card, 
+            text=self.text_bundle["eye_switch"], 
+            command=self.toggle_eye_service,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.eye_switch.pack(anchor="w", padx=20, pady=5)
         
@@ -157,13 +180,19 @@ class HomePage(ctk.CTkFrame):
             self.eye_switch.select()
 
         # Target Dropdown Setup
-        self.mode_label = ctk.CTkLabel(self.eye_card, text=self.text_bundle["dropdown_lbl"])
+        self.mode_label = ctk.CTkLabel(
+            self.eye_card, 
+            text=self.text_bundle["dropdown_lbl"],
+            font=ctk.CTkFont(size=base_font_size)
+        )
         self.mode_label.pack(anchor="w", padx=20, pady=(20, 5))
         
         self.mode_dropdown = ctk.CTkOptionMenu(
             self.eye_card, 
             values=self.text_bundle["dropdown_opts"],
-            command=self.on_dropdown_change  
+            command=self.on_dropdown_change,
+            font=ctk.CTkFont(size=base_font_size),
+            dropdown_font=ctk.CTkFont(size=base_font_size)
         )
         self.mode_dropdown.pack(anchor="w", padx=20, pady=0)
         
@@ -184,7 +213,8 @@ class HomePage(ctk.CTkFrame):
         self.video_label = ctk.CTkLabel(
             self.video_placeholder, 
             text=initial_cam_text, 
-            text_color="#555555", font=ctk.CTkFont(size=11, slant="italic")
+            text_color="#555555", 
+            font=ctk.CTkFont(size=base_font_size - 2, slant="italic")
         )
         self.video_label.pack(expand=True, pady=40)
 

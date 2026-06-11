@@ -10,7 +10,6 @@ from ui.settings_page import SettingsPage
 from ui.profile_page import ProfilePage
 from ui.help_page import HelpPage
 
-
 def get_asset_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -93,10 +92,8 @@ class VocalIrisApp(ctk.CTk):
             size=(120, 120)  # You can adjust this size (width, height) to make it look perfect!
         )
 
-        # 2. RENDER THE TEXT HEADER
-        self.logo_label = ctk.CTkLabel(
-            self.sidebar_frame, text="VocalIris OS", font=ctk.CTkFont(size=20, weight="bold")
-        )
+        # 2. RENDER THE TEXT HEADER (Font size will be managed by update_sidebar_languages)
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="VocalIris OS")
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 5))
 
         # 3. NEW: RENDER THE LOGO IMAGE DIRECTLY UNDERNEATH THE TEXT
@@ -118,7 +115,7 @@ class VocalIrisApp(ctk.CTk):
         self.btn_help = ctk.CTkButton(self.sidebar_frame, text="", command=lambda: self.switch_page("Help"))
         self.btn_help.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
-        # Set initial sidebar translation labels
+        # Set initial sidebar translation labels and font sizes
         self.update_sidebar_languages()
 
         # Dynamic Content Panel
@@ -153,16 +150,26 @@ class VocalIrisApp(ctk.CTk):
         # If language parameter updates, immediately synchronize navigation components
         if key == "language":
             self.update_sidebar_languages()
+            
+        # Hot-reload font changes across the sidebar and current active view frame instantly
+        elif key == "font_size":
+            self.update_sidebar_languages()
+            if self.active_page_name:
+                self.switch_page(self.active_page_name, force_reload=True)
 
     def update_sidebar_languages(self):
-        """Redraws the sidebar UI strings using the correct language profile."""
+        """Redraws the sidebar UI strings and scales fonts dynamically using configuration states."""
         lang = self.settings.get("language", "English")
+        base_size = int(self.settings.get("font_size", 14))
         bundle = self.sidebar_translations.get(lang, self.sidebar_translations["English"])
         
-        self.btn_home.configure(text=bundle["home"])
-        self.btn_settings.configure(text=bundle["settings"])
-        self.btn_profile.configure(text=bundle["profile"])
-        self.btn_help.configure(text=bundle["help"])
+        # Apply relative scale sizing factors
+        self.logo_label.configure(font=ctk.CTkFont(size=base_size + 6, weight="bold"))
+        
+        self.btn_home.configure(text=bundle["home"], font=ctk.CTkFont(size=base_size))
+        self.btn_settings.configure(text=bundle["settings"], font=ctk.CTkFont(size=base_size))
+        self.btn_profile.configure(text=bundle["profile"], font=ctk.CTkFont(size=base_size))
+        self.btn_help.configure(text=bundle["help"], font=ctk.CTkFont(size=base_size))
 
     # ==========================================
     # SMART ROUTER CONTROLLER ENGINE
@@ -189,12 +196,10 @@ class VocalIrisApp(ctk.CTk):
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Profile":
-            # Pass app_instance so profile page can also read language configuration
             self.active_page = ProfilePage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             
         elif page_name == "Help":
-            # Pass app_instance so help page can also read language configuration
             self.active_page = HelpPage(self.content_frame, app_instance=self)
             self.active_page.pack(fill="both", expand=True)
             

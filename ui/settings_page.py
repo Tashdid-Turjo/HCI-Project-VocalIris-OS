@@ -6,6 +6,9 @@ class SettingsPage(ctk.CTkFrame):
         
         self.app_master = app_instance
         self.current_lang = self.app_master.settings.get("language", "English")
+        
+        # Extract base font scale factor safely as an integer
+        base_font_size = int(self.app_master.settings.get("font_size", 14))
 
         # ==========================================
         # LOCALIZATION (TRANSLATION) DICTIONARY
@@ -24,7 +27,7 @@ class SettingsPage(ctk.CTkFrame):
                 "theme_lbl": "অ্যাপিয়ারেন্স থিম (পদ্ধতি):",
                 "lang_lbl": "ভাষা নির্বাচন করুন:",
                 "font_lbl": "অ্যাপ্লিকেশন ফন্ট সাইজ স্কেলিং:",
-                "popup_chk": "ভয়েস কমান্ড সনাক্ত করা হলে পপ-আপ বার্তা প্রদর্শন করুন",
+                "popup_chk": "ভয়েস কমান্ড সনাক্ত করা হলে পপ-আপ বার্তা প্রদর্শন করুন",
                 "themes": ["ডার্ক", "লাইট", "সিস্টেম"]
             }
         }
@@ -32,25 +35,31 @@ class SettingsPage(ctk.CTkFrame):
         # Select the active text translation bundle
         text_bundle = self.translations.get(self.current_lang, self.translations["English"])
 
-        # 1. Page Header Title
+        # 1. Page Header Title (Proportional Scaling: Base + 10)
         self.title_label = ctk.CTkLabel(
             self, 
             text=text_bundle["title"], 
-            font=ctk.CTkFont(size=24, weight="bold")
+            font=ctk.CTkFont(size=base_font_size + 10, weight="bold")
         )
         self.title_label.pack(pady=(10, 30), anchor="w", padx=20)
 
         # ==========================================
         # CONTROL 1: DARK / LIGHT MODE SWITCH
         # ==========================================
-        self.theme_label = ctk.CTkLabel(self, text=text_bundle["theme_lbl"], font=ctk.CTkFont(size=14))
+        self.theme_label = ctk.CTkLabel(
+            self, 
+            text=text_bundle["theme_lbl"], 
+            font=ctk.CTkFont(size=base_font_size)
+        )
         self.theme_label.pack(anchor="w", padx=20, pady=(10, 5))
         
         # Display themes based on selected language
         self.theme_dropdown = ctk.CTkOptionMenu(
             self, 
             values=text_bundle["themes"],
-            command=self.change_theme_action
+            command=self.change_theme_action,
+            font=ctk.CTkFont(size=base_font_size),
+            dropdown_font=ctk.CTkFont(size=base_font_size)
         )
         self.theme_dropdown.pack(anchor="w", padx=20, pady=(0, 20))
         
@@ -66,13 +75,20 @@ class SettingsPage(ctk.CTkFrame):
         # ==========================================
         # CONTROL 2: LANGUAGE SELECTOR
         # ==========================================
-        self.lang_label = ctk.CTkLabel(self, text=text_bundle["lang_lbl"], font=ctk.CTkFont(size=14))
+        self.lang_label = ctk.CTkLabel(
+            self, 
+            text=text_bundle["lang_lbl"], 
+            font=ctk.CTkFont(size=base_font_size)
+        )
         self.lang_label.pack(anchor="w", padx=20, pady=(10, 5))
         
+        # Scale dropdown button option text
         self.lang_dropdown = ctk.CTkOptionMenu(
             self, 
             values=["English", "Bangla"],
-            command=self.change_language_action 
+            command=self.change_language_action,
+            font=ctk.CTkFont(size=base_font_size),
+            dropdown_font=ctk.CTkFont(size=base_font_size)
         )
         self.lang_dropdown.pack(anchor="w", padx=20, pady=(0, 20))
         self.lang_dropdown.set(self.current_lang)
@@ -80,7 +96,14 @@ class SettingsPage(ctk.CTkFrame):
         # ==========================================
         # CONTROL 3: FONT SIZE CONFIGURATION (SLIDER)
         # ==========================================
-        self.font_label = ctk.CTkLabel(self, text=text_bundle["font_lbl"], font=ctk.CTkFont(size=14))
+        # Append live numeric value string next to layout label string for UX transparency
+        font_display_text = f"{text_bundle['font_lbl']} ({base_font_size}px)"
+        
+        self.font_label = ctk.CTkLabel(
+            self, 
+            text=font_display_text, 
+            font=ctk.CTkFont(size=base_font_size)
+        )
         self.font_label.pack(anchor="w", padx=20, pady=(10, 5))
         
         self.font_slider = ctk.CTkSlider(
@@ -91,7 +114,7 @@ class SettingsPage(ctk.CTkFrame):
             command=self.change_font_action 
         )
         self.font_slider.pack(anchor="w", padx=20, pady=(0, 20))
-        self.font_slider.set(self.app_master.settings["font_size"])
+        self.font_slider.set(base_font_size)
 
         # ==========================================
         # CONTROL 4: POPUP NOTIFICATION TRIGGER (CHECKBOX)
@@ -99,7 +122,8 @@ class SettingsPage(ctk.CTkFrame):
         self.popup_checkbox = ctk.CTkCheckBox(
             self, 
             text=text_bundle["popup_chk"],
-            command=self.toggle_popup_action 
+            command=self.toggle_popup_action,
+            font=ctk.CTkFont(size=base_font_size)
         )
         self.popup_checkbox.pack(anchor="w", padx=20, pady=(20, 10))
         
@@ -126,7 +150,9 @@ class SettingsPage(ctk.CTkFrame):
         self.app_master.switch_page("Settings", force_reload=True)
 
     def change_font_action(self, slider_val):
-        self.app_master.update_setting("font_size", int(slider_val))
+        # Cast value smoothly to an integer step
+        int_val = int(slider_val)
+        self.app_master.update_setting("font_size", int_val)
 
     def toggle_popup_action(self):
         is_checked = bool(self.popup_checkbox.get())
