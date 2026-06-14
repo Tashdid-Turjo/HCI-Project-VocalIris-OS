@@ -32,12 +32,12 @@ class HelpPage(ctk.CTkFrame):
             "   • If mouse cursor drift begins expanding across monitor coordinate scales,\n"
             "     return immediately to the Home Dashboard pane and launch a clean calibration execution run.\n\n"
             "-----------------------------------------------------------\n"
-            "Application Framework Release: VocalIris Desktop Client v1.0.0 (Offline Mode Built)"
+            "Application Framework Release: IrisVocal Desktop Client v1.0.0 (Offline Mode Built)"
         )
 
         help_guide_bn = (
             "===========================================================\n"
-            "                     সিস্টেম ট্রাবলশুটিং গাইড                   \n"
+            "                                 সিস্টেম ট্রাবলশুটিং গাইড                                   \n"
             "===========================================================\n\n"
             "১. হার্ডওয়্যার ওয়েব-ক্যামেরা সমস্যা:\n"
             "   • নিশ্চিত করুন যে অন্য কোনো বাহ্যিক প্রোগ্রাম (Zoom, Discord, Browser) আপনার\n"
@@ -52,7 +52,7 @@ class HelpPage(ctk.CTkFrame):
             "   • যদি মাউস কার্সার স্ক্রিনের বাইরে চলে যায় বা ড্রিফট করতে শুরু করে,\n"
             "     তবে অবিলম্বে হোম ড্যাশবোর্ডে ফিরে যান এবং একটি নতুন ক্যালিব্রেশন রান চালু করুন।\n\n"
             "-----------------------------------------------------------\n"
-            "অ্যাপ্লিকেশন ফ্রেমওয়ার্ক রিলিজ: ভোকালআইরিস ডেক্সটপ ক্লায়েন্ট v১.০.০ (অফলাইন মোড)"
+            "অ্যাপ্লিকেশন ফ্রেমওয়ার্ক রিলিজ: ভোকালআইরিস ডেক্সটপ ক্লায়েন্ট v১.০.০ (অঅফলাইন মোড)"
         )
 
         # ==========================================
@@ -61,9 +61,11 @@ class HelpPage(ctk.CTkFrame):
         self.translations = {
             "English": {
                 "title": "Help & System Support",
-                "doc_header": "VocalIris OS Operating Documentation & Logs",
+                "doc_header": "IrisVocal OS Operating Documentation & Logs",
                 "discord_lbl": "Need live assistance? For reaching out to us, communicate with the official Discord server:",
                 "discord_btn": "Join Discord Server",
+                "github_lbl": "Want to review the source code or report structural issues? Visit our repository:",
+                "github_btn": "Open GitHub Repo",
                 "guide_text": help_guide_en
             },
             "Bangla": {
@@ -71,6 +73,8 @@ class HelpPage(ctk.CTkFrame):
                 "doc_header": "ভোকালআইরিস ওএস অপারেটিং ডকুমেন্টেশন এবং লগ",
                 "discord_lbl": "সরাসরি সহায়তার প্রয়োজন? আমাদের সাথে যোগাযোগের জন্য অফিশিয়াল ডিসকর্ড সার্ভারে যুক্ত হোন:",
                 "discord_btn": "ডিসকর্ড সার্ভারে যুক্ত হোন",
+                "github_lbl": "সোর্স কোড দেখতে বা কোনো সমস্যা রিপোর্ট করতে আমাদের অফিশিয়াল গিটহাব রিপোজিটরি ভিজিট করুন:",
+                "github_btn": "গিটহাব ওপেন করুন",
                 "guide_text": help_guide_bn
             }
         }
@@ -112,7 +116,7 @@ class HelpPage(ctk.CTkFrame):
         # DISCORD COMMUNITY SUPPORT SECTION
         # =================================================================
         self.support_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.support_frame.pack(fill="x", padx=20, pady=(10, 10))
+        self.support_frame.pack(fill="x", padx=20, pady=(5, 5))
 
         # Support Label Text (Proportional Scaling: Base size matching standard guidelines)
         self.discord_label = ctk.CTkLabel(
@@ -135,7 +139,40 @@ class HelpPage(ctk.CTkFrame):
         )
         self.btn_discord.pack(side="right", padx=5)
 
+        # =================================================================
+        # GITHUB SOURCE CONTROL REPOSITORY SECTION
+        # =================================================================
+        self.github_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.github_frame.pack(fill="x", padx=20, pady=(5, 15))
+
+        # GitHub Label Text (Maintains visual alignment consistency with Discord block)
+        self.github_label = ctk.CTkLabel(
+            self.github_frame, 
+            text=text_bundle["github_lbl"],
+            font=ctk.CTkFont(size=base_font_size),
+            wraplength=600, justify="left"
+        )
+        self.github_label.pack(side="left", padx=(5, 15))
+
+        # Interactive GitHub Repository Execution Button
+        self.btn_github = ctk.CTkButton(
+            self.github_frame, 
+            text=text_bundle["github_btn"], 
+            fg_color="#FFFFFF",       # GitHub official brand dark-gray hex
+            hover_color="#E3E5E8",      # Discord-style light off-white/gray hover
+            text_color="#000000",       # Sharp black text
+            width=150,
+            command=self.open_github_link,
+            font=ctk.CTkFont(size=base_font_size)
+        )
+        self.btn_github.pack(side="right", padx=5)
+
     def open_discord_link(self):
         """Launches the user's default browser pointing directly to the support server link."""
         discord_url = "https://discord.gg/R3nqaffQ"
         webbrowser.open_new_tab(discord_url)
+
+    def open_github_link(self):
+        """Launches the user's default browser pointing directly to the project repository link."""
+        github_url = "https://github.com/Tashdid-Turjo/HCI-Project-VocalIris-OS"
+        webbrowser.open_new_tab(github_url)

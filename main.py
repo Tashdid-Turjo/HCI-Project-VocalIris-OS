@@ -63,7 +63,7 @@ class VocalIrisApp(ctk.CTk):
         # ==========================================
         # 2. MAIN WINDOW CONFIGURATION
         # ==========================================
-        self.title("VocalIris OS - Desktop Client")
+        self.title("IrisVocal OS - Desktop Client")
         self.geometry("1000x600")
         ctk.set_appearance_mode(self.settings["theme"])
         ctk.set_default_color_theme("blue")
@@ -93,7 +93,7 @@ class VocalIrisApp(ctk.CTk):
         )
 
         # 2. RENDER THE TEXT HEADER (Font size will be managed by update_sidebar_languages)
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="VocalIris OS")
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="IrisVocal OS")
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 5))
 
         # 3. NEW: RENDER THE LOGO IMAGE DIRECTLY UNDERNEATH THE TEXT
